@@ -11,7 +11,7 @@ There are several changes, main differences:
 *   current Renci SSH (2014.4.6beta)
 *   solved few bugs like payload, 2 hosts and others
 *   Puttyant (Pageant) support
-*   settings files location is in fixed place (%USER%/APPDATA/winsshfs)
+*   settings files location is in fixed place (%localappdata%\WinSshFS)
 *   "spooldrive" - all remote hosts can by mount as mountpoint dir in one virtual drive
 *   archive flag of file in windows represents and controls permission for group:
     *   ON => group have same rights as owner
