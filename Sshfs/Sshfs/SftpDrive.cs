@@ -435,6 +435,14 @@ namespace Sshfs
               ProxyPass = info.GetString("proxyPass");
             }
             catch { }
+            try
+            {
+                KeepAliveInterval = info.GetInt16("keepAliveInterval");
+            }
+            catch
+            {
+                KeepAliveInterval = 1;
+            }
             ConnectionType = (ConnectionType) info.GetByte("c");
             if (ConnectionType == ConnectionType.Password)
             {
@@ -472,6 +480,7 @@ namespace Sshfs
             info.AddValue("proxyHost", ProxyHost);
             info.AddValue("proxyUser", ProxyUser);
             info.AddValue("proxyPass", ProxyPass);
+            info.AddValue("keepAliveInterval", KeepAliveInterval);
             if (ConnectionType == ConnectionType.Password)
             {
                 info.AddValue("p", Utilities.ProtectString(Password));

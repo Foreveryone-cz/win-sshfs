@@ -64,6 +64,8 @@
             this.mountPointBox = new System.Windows.Forms.TextBox();
             this.label10 = new System.Windows.Forms.Label();
             this.proxyType = new System.Windows.Forms.ComboBox();
+            this.labelKeepAlive = new System.Windows.Forms.Label();
+            this.keepAliveIntervalBox = new System.Windows.Forms.NumericUpDown();
             this.driveListView = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.imageList = new System.Windows.Forms.ImageList(this.components);
@@ -88,19 +90,17 @@
             this.startupMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.labelKeepAlive = new System.Windows.Forms.Label();
-            this.keepAliveIntervalBox = new System.Windows.Forms.NumericUpDown();
             this.tableLayoutPanel1.SuspendLayout();
             this.fieldsPanel.SuspendLayout();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.portBox)).BeginInit();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.keepAliveIntervalBox)).BeginInit();
             this.tableLayoutPanel2.SuspendLayout();
             this.buttonPanel.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
             this.contextMenu.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.keepAliveIntervalBox)).BeginInit();
             this.SuspendLayout();
             // 
             // tableLayoutPanel1
@@ -129,7 +129,7 @@
             this.fieldsPanel.ColumnCount = 3;
             this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 26.10063F));
             this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 73.89937F));
-            this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 25F));
+            this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 26F));
             this.fieldsPanel.Controls.Add(this.proxyHostBox, 1, 10);
             this.fieldsPanel.Controls.Add(this.label12, 0, 10);
             this.fieldsPanel.Controls.Add(this.panel3, 1, 11);
@@ -183,7 +183,7 @@
             this.proxyHostBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.proxyHostBox.Location = new System.Drawing.Point(81, 322);
             this.proxyHostBox.Name = "proxyHostBox";
-            this.proxyHostBox.Size = new System.Drawing.Size(217, 20);
+            this.proxyHostBox.Size = new System.Drawing.Size(216, 20);
             this.proxyHostBox.TabIndex = 10;
             // 
             // label12
@@ -204,13 +204,13 @@
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel3.Location = new System.Drawing.Point(81, 351);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(217, 23);
+            this.panel3.Size = new System.Drawing.Size(216, 23);
             this.panel3.TabIndex = 11;
             // 
             // proxyPassBox
             // 
             this.proxyPassBox.Dock = System.Windows.Forms.DockStyle.Right;
-            this.proxyPassBox.Location = new System.Drawing.Point(112, 0);
+            this.proxyPassBox.Location = new System.Drawing.Point(111, 0);
             this.proxyPassBox.Name = "proxyPassBox";
             this.proxyPassBox.Size = new System.Drawing.Size(105, 20);
             this.proxyPassBox.TabIndex = 1;
@@ -239,7 +239,7 @@
             // 
             this.nameBox.Location = new System.Drawing.Point(81, 3);
             this.nameBox.Name = "nameBox";
-            this.nameBox.Size = new System.Drawing.Size(217, 20);
+            this.nameBox.Size = new System.Drawing.Size(216, 20);
             this.nameBox.TabIndex = 0;
             this.nameBox.Leave += new System.EventHandler(this.box_Leave);
             // 
@@ -258,7 +258,7 @@
             // 
             this.hostBox.Location = new System.Drawing.Point(81, 32);
             this.hostBox.Name = "hostBox";
-            this.hostBox.Size = new System.Drawing.Size(217, 20);
+            this.hostBox.Size = new System.Drawing.Size(216, 20);
             this.hostBox.TabIndex = 1;
             this.hostBox.Leave += new System.EventHandler(this.box_Leave);
             // 
@@ -306,7 +306,7 @@
             // 
             this.userBox.Location = new System.Drawing.Point(81, 90);
             this.userBox.Name = "userBox";
-            this.userBox.Size = new System.Drawing.Size(217, 20);
+            this.userBox.Size = new System.Drawing.Size(216, 20);
             this.userBox.TabIndex = 3;
             this.userBox.Leave += new System.EventHandler(this.box_Leave);
             // 
@@ -320,7 +320,7 @@
             "Pageant"});
             this.authCombo.Location = new System.Drawing.Point(81, 119);
             this.authCombo.Name = "authCombo";
-            this.authCombo.Size = new System.Drawing.Size(217, 21);
+            this.authCombo.Size = new System.Drawing.Size(216, 21);
             this.authCombo.TabIndex = 4;
             this.authCombo.SelectedIndexChanged += new System.EventHandler(this.authBox_SelectedIndexChanged);
             // 
@@ -386,7 +386,7 @@
             "/"});
             this.directoryBox.Location = new System.Drawing.Point(81, 206);
             this.directoryBox.Name = "directoryBox";
-            this.directoryBox.Size = new System.Drawing.Size(217, 21);
+            this.directoryBox.Size = new System.Drawing.Size(216, 21);
             this.directoryBox.TabIndex = 6;
             // 
             // label7
@@ -408,7 +408,7 @@
             this.panel2.Controls.Add(this.passwordBox);
             this.panel2.Location = new System.Drawing.Point(81, 148);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(217, 52);
+            this.panel2.Size = new System.Drawing.Size(216, 52);
             this.panel2.TabIndex = 5;
             // 
             // passphraseBox
@@ -474,7 +474,7 @@
             this.mountPointBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mountPointBox.Location = new System.Drawing.Point(81, 264);
             this.mountPointBox.Name = "mountPointBox";
-            this.mountPointBox.Size = new System.Drawing.Size(217, 20);
+            this.mountPointBox.Size = new System.Drawing.Size(216, 20);
             this.mountPointBox.TabIndex = 8;
             // 
             // label10
@@ -499,8 +499,36 @@
             "SOCKS5"});
             this.proxyType.Location = new System.Drawing.Point(81, 293);
             this.proxyType.Name = "proxyType";
-            this.proxyType.Size = new System.Drawing.Size(217, 21);
+            this.proxyType.Size = new System.Drawing.Size(216, 21);
             this.proxyType.TabIndex = 9;
+            // 
+            // labelKeepAlive
+            // 
+            this.labelKeepAlive.AutoSize = true;
+            this.labelKeepAlive.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.labelKeepAlive.Location = new System.Drawing.Point(3, 377);
+            this.labelKeepAlive.Name = "labelKeepAlive";
+            this.labelKeepAlive.Size = new System.Drawing.Size(72, 29);
+            this.labelKeepAlive.TabIndex = 26;
+            this.labelKeepAlive.Text = "KeepAlive (s)";
+            this.labelKeepAlive.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // keepAliveIntervalBox
+            // 
+            this.keepAliveIntervalBox.Location = new System.Drawing.Point(81, 380);
+            this.keepAliveIntervalBox.Maximum = new decimal(new int[] {
+            999,
+            0,
+            0,
+            0});
+            this.keepAliveIntervalBox.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.keepAliveIntervalBox.Name = "keepAliveIntervalBox";
+            this.keepAliveIntervalBox.Size = new System.Drawing.Size(120, 20);
+            this.keepAliveIntervalBox.TabIndex = 27;
             // 
             // driveListView
             // 
@@ -780,39 +808,6 @@
             this.exitMenuItem.Text = "Exit";
             this.exitMenuItem.Click += new System.EventHandler(this.exitMenuItem_Click);
             // 
-            // labelKeepAlive
-            // 
-            this.labelKeepAlive.AutoSize = true;
-            this.labelKeepAlive.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.labelKeepAlive.Location = new System.Drawing.Point(3, 377);
-            this.labelKeepAlive.Name = "labelKeepAlive";
-            this.labelKeepAlive.Size = new System.Drawing.Size(72, 29);
-            this.labelKeepAlive.TabIndex = 26;
-            this.labelKeepAlive.Text = "KeepAlive (s)";
-            this.labelKeepAlive.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // keepAliveIntervalBox
-            // 
-            this.keepAliveIntervalBox.Location = new System.Drawing.Point(81, 380);
-            this.keepAliveIntervalBox.Maximum = new decimal(new int[] {
-            999,
-            0,
-            0,
-            0});
-            this.keepAliveIntervalBox.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.keepAliveIntervalBox.Name = "keepAliveIntervalBox";
-            this.keepAliveIntervalBox.Size = new System.Drawing.Size(120, 20);
-            this.keepAliveIntervalBox.TabIndex = 27;
-            this.keepAliveIntervalBox.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -838,12 +833,12 @@
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.keepAliveIntervalBox)).EndInit();
             this.tableLayoutPanel2.ResumeLayout(false);
             this.buttonPanel.ResumeLayout(false);
             this.tableLayoutPanel3.ResumeLayout(false);
             this.tableLayoutPanel3.PerformLayout();
             this.contextMenu.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.keepAliveIntervalBox)).EndInit();
             this.ResumeLayout(false);
 
         }
