@@ -57,7 +57,7 @@ namespace Sshfs
 
         private readonly MemoryCache _cache = MemoryCache.Default;
 
-        private SftpSession _sftpSession;
+        private SftpClient _sftpSession_;
         private readonly TimeSpan _operationTimeout = TimeSpan.FromSeconds(30);//new TimeSpan(0, 0, 0, 0, -1);
         private string _rootpath;
 
@@ -70,9 +70,6 @@ namespace Sshfs
 
         private readonly int _attributeCacheTimeout;
         private readonly int _directoryCacheTimeout;
-
-        private bool _supportsPosixRename;
-        private bool _supportsStatVfs;
 
         private readonly string _volumeLabel;
 
@@ -116,12 +113,6 @@ namespace Sshfs
             {
                 _rootpath = _sftpSession.RequestRealPath(".").First().Key;
             }
-
-            _supportsPosixRename =
-                _sftpSession._supportedExtensions.Contains(new KeyValuePair<string, string>("posix-rename@openssh.com", "1"));
-            _supportsStatVfs =
-                _sftpSession._supportedExtensions.Contains(new KeyValuePair<string, string>("statvfs@openssh.com", "2"));
-
         }
 
         protected override void OnDisconnected()
@@ -262,7 +253,7 @@ namespace Sshfs
 
         private IEnumerable<int> GetUserGroupsIds()
         {
-            using (var cmd = new SshCommand(Session, "id -G "))
+            using (var cmd = new SshCommand(Session, "id -G ", Encoding.UTF8))
             {
                 cmd.Execute();
                 return cmd.Result.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse);
@@ -271,8 +262,8 @@ namespace Sshfs
 
         private int GetUserId()
         {
-            using (var cmd = new SshCommand(Session, "id -u "))
-                // Thease commands seems to be POSIX so the only problem would be Windows enviroment
+            using (var cmd = new SshCommand(Session, "id -u ", Encoding.UTF8))
+            // Thease commands seems to be POSIX so the only problem would be Windows enviroment
             {
                 cmd.Execute();
                 return cmd.ExitStatus == 0 ? Int32.Parse(cmd.Result) : -1;
@@ -309,7 +300,7 @@ namespace Sshfs
 
         private SftpFileAttributes GetAttributes(string path)
         {
-            var sftpLStatAttributes = _sftpSession.RequestLStat(path, true);
+            var sftpLStatAttributes = _sftpSession.RequestLStat(path);
             if (sftpLStatAttributes == null || !sftpLStatAttributes.IsSymbolicLink)
             {
                 return sftpLStatAttributes;
@@ -633,7 +624,7 @@ namespace Sshfs
                     var handle = _sftpSession.RequestOpen(GetUnixPath(fileName), Flags.Write);
                  //   using (var wait = new AutoResetEvent(false))
                     {
-                        _sftpSession.RequestWrite(handle, (ulong) offset, buffer, null,null/*, wait*/);
+                        _sftpSession.RequestWrite(handle, (ulong) offset, buffer, buffer.Length, null,null/*, wait*/);
                     }
                     _sftpSession.RequestClose(handle);
                     bytesWritten = buffer.Length;
@@ -1152,7 +1143,7 @@ namespace Sshfs
                 return DokanError.ErrorSuccess;*/
             string newpath = GetUnixPath(newName);
 
-            if (_sftpSession.RequestLStat(newpath, true) == null)
+            if (_sftpSession.RequestLStat(newpath) == null)
             {
                 (info.Context as SftpContext).Release();
 
@@ -1181,11 +1172,11 @@ namespace Sshfs
 
                 try
                 {
-                    if (_supportsPosixRename)
+                    try
                     {
                         _sftpSession.RequestPosixRename(oldpath, newpath);
                     }
-                    else
+                    catch (NotSupportedException)
                     {
                         if (!info.IsDirectory)
                             _sftpSession.RequestRemove(newpath);
@@ -1196,6 +1187,7 @@ namespace Sshfs
                     CacheResetParent(oldpath);
                     CacheResetParent(newpath);
                 }
+                
                 catch (SftpPermissionDeniedException)
                 {
                     LogFSActionError("MoveFile", oldName, (SftpContext)info.Context, "To:{0} Access denied", newName);
@@ -1260,21 +1252,22 @@ namespace Sshfs
             }
             else
             {
-                if (_supportsStatVfs)
+                try
                 {
                     var information = _sftpSession.RequestStatVfs(_rootpath, true);
-                    total = (long) (information.TotalBlocks*information.BlockSize);
-                    free = (long) (information.FreeBlocks*information.BlockSize);
-                    used = (long) (information.AvailableBlocks*information.BlockSize);
+                    total = (long)(information.TotalBlocks * information.BlockSize);
+                    free = (long)(information.FreeBlocks * information.BlockSize);
+                    used = (long)(information.AvailableBlocks * information.BlockSize);
                 }
-                else
-                    using (var cmd = new SshCommand(Session, String.Format(" df -Pk  {0}", _rootpath)))
-                        // POSIX standard df
+                catch (NotSupportedException)
+                {
+                    using (var cmd = new SshCommand(Session, String.Format(" df -Pk  {0}", _rootpath), Encoding.UTF8))
+                    // POSIX standard df
                     {
                         cmd.Execute();
                         if (cmd.ExitStatus == 0)
                         {
-                            var values = cmd.Result.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+                            var values = cmd.Result.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
                             total = Int64.Parse(values[values.Length - 5]) << 10;
                             used = Int64.Parse(values[values.Length - 4]) << 10;
@@ -1287,6 +1280,7 @@ namespace Sshfs
                             free = 0xc80000000;
                         }
                     }
+                }
 
                 CacheAddDiskInfo(new Tuple<long, long, long>(free, total, used),
                         DateTimeOffset.UtcNow.AddMinutes(3));
