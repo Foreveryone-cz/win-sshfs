@@ -195,15 +195,16 @@ namespace Sshfs
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Unmount()
         {
-            this._threadCancel.Cancel();
-            this._pauseEvent.Set();
+            if(this._threadCancel != null)
+                this._threadCancel.Cancel();
+            if(this._pauseEvent != null)
+                this._pauseEvent.Set();
 
             Debug.WriteLine("Unmount");
 
             Status = DriveStatus.Unmounting;
             try
             {
-                // Dokan.Unmount(Letter);
                 Dokan.RemoveMountPoint(String.Format("{0}:\\", mountedLetter));
             }
             catch
