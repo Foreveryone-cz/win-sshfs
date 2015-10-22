@@ -16,6 +16,7 @@
 // THE SOFTWARE.
 using System;
 using System.IO;
+using Renci.SshNet;
 using Renci.SshNet.Sftp;
 
 namespace Sshfs
@@ -23,8 +24,7 @@ namespace Sshfs
     internal sealed class SftpContext : IDisposable
     {
         private SftpFileAttributes _attributes;
-
-        private SftpContextStream _stream;
+        private SftpFileStream _stream;
 
         public bool deleteOnCloseWorkaround = false;
 
@@ -39,18 +39,19 @@ namespace Sshfs
             this.deleteOnCloseWorkaround = aDeleteOnCloseWorkaround;
         }
 
-        public SftpContext(SftpSession session, string path, FileMode mode, FileAccess access,
+        public SftpContext(SftpClient client, string path, FileMode mode, FileAccess access,
                         SftpFileAttributes attributes)
         {
-            _stream = new SftpContextStream(session, path, mode, access, attributes);
+            _stream = client.Open(path, mode, access);
+            _attributes = attributes;
         }
 
         public SftpFileAttributes Attributes
         {
-            get { return _attributes ?? _stream.Attributes; }
+            get { return _attributes; }
         }
 
-        public Stream Stream
+        public SftpFileStream Stream
         {
             get { return _stream; }
         }
