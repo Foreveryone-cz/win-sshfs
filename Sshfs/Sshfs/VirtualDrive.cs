@@ -205,7 +205,6 @@ namespace Sshfs
             Status = DriveStatus.Unmounting;
             try
             {
-                // Dokan.Unmount(Letter);
                 Dokan.RemoveMountPoint(String.Format("{0}:\\", mountedLetter));
             }
             catch

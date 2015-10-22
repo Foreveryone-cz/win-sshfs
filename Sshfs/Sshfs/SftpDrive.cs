@@ -219,11 +219,9 @@ namespace Sshfs
             _pauseEvent = new AutoResetEvent(false);
             _mountCancel = new CancellationTokenSource();
 
-           // if (_mountThread == null)
-           // {
-                Debug.WriteLine("Thread:Created");
-                _mountThread = new Thread(MountLoop) {IsBackground = true};
-           // }
+            Debug.WriteLine("Thread:Created");
+            _mountThread = new Thread(MountLoop) {IsBackground = true};
+
             _mountThread.Start();
         }
 
