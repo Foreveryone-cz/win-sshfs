@@ -144,7 +144,7 @@ namespace Renci.SshNet
                     if (exp.SocketErrorCode == SocketError.ConnectionAborted)
                     {
                         buffer = new byte[length];
-                        this.Disconnect();
+                        this.Disconnect(DisconnectReason.ConnectionLost, "An established connection was aborted by the server.");
                         return;
                     }
 

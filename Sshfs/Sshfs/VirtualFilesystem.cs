@@ -129,7 +129,7 @@ namespace Sshfs
             string path = fileName.Substring(1);
             if (path == "")
             {
-                info.IsDirectory = true;
+                //info.IsDirectory = true;
                 info.Context = null;
                 LogFSActionSuccess("OpenFile", fileName, null, "VFS root");
                 return DokanError.ErrorSuccess;
@@ -256,14 +256,17 @@ namespace Sshfs
                 return ops.OpenDirectory(fileName, info);
             }
 
-            lastActiveSubsytem = null;
-            info.IsDirectory = true;
-
             if (fileName.Length == 1) //root dir
             {
                 LogFSActionSuccess("OpenDir", fileName, drive, "Found, VFS root");
+                info.IsDirectory = true;
                 return DokanError.ErrorSuccess;
             }
+
+            
+
+            //root test shoud keep lastactive if drag and drop(win8)
+            lastActiveSubsytem = null;
 
             string path = fileName.Substring(1);//cut leading \
             
@@ -273,6 +276,7 @@ namespace Sshfs
                 if (path == mp)
                 {
                     info.Context = subdrive;
+                    info.IsDirectory = true;
                     LogFSActionSuccess("OpenDir", fileName, drive, "Found, final mountpoint");
                     return DokanError.ErrorSuccess;
                 }
@@ -280,6 +284,7 @@ namespace Sshfs
                 if (mp.IndexOf(path + '\\') == 0)
                 { //path is part of mount point
                     info.Context = subdrive;
+                    info.IsDirectory = true;
                     LogFSActionSuccess("OpenDir", fileName, drive, "Found, part of mountpoint");
                     return DokanError.ErrorSuccess;
                 }
@@ -474,7 +479,7 @@ namespace Sshfs
                     mp = mp.Substring(0, cuttmp);
                 }
 
-                if (!files.Select(file => file.FileName).Contains(mp))
+                if (!files.Select(file => file.FileName).Contains(mp) && mp != "")
                 {
                     FileInformation fi = new FileInformation();
                     fi.FileName = mp;
@@ -486,80 +491,6 @@ namespace Sshfs
                 }
             }
            
-            return DokanError.ErrorSuccess;
-        }
-
-        DokanError IDokanOperations.FindFilesWithPattern(string fileName,string pattern, out IList<FileInformation> files, DokanFileInfo info)
-        {
-            SftpDrive drive = this.GetDriveByMountPoint(fileName, out fileName);
-            LogFSActionInit("FindFilesPat", fileName, drive, "");
-
-            if (drive != null)
-            {
-                LogFSActionSuccess("FindFilesPat", fileName, drive, "NonVFS");
-                return GetSubSystemOperations(drive).FindFilesWithPattern(fileName, pattern, out files, info);
-            }
-
-
-            files = new List<FileInformation>();
-
-            string path = fileName.Substring(1);//cut leading \
-            foreach (SftpDrive subdrive in _subsytems)
-            {
-                string mp = subdrive.MountPoint; //  mp1 || mp1\mp2 ...
-                if (mp.Length == 0)
-                    continue;
-
-                if (path.Length > 0) //not root dir
-                {
-                    if (path == mp) //this shoud not happend, because is managed by drive
-                    {
-                        LogFSActionError("FindFilesPat", fileName, drive, "mountpoint not in drives?");
-                        break;
-                    }
-
-                    if (mp.IndexOf(path + '\\') == 0) //path is part of mount point =>implies=> length of path>mp
-                    {
-                        mp = mp.Substring(path.Length + 1); //cut the path
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
-
-                int cuttmp = mp.IndexOf('\\');
-                if (cuttmp > 0) // have submountpoint like  mp1\mp2 
-                {
-                    mp = mp.Substring(0, cuttmp);
-                }
-
-                if (!files.Select(file => file.FileName).Contains(mp))
-                {
-                    FileInformation fi = new FileInformation();
-                    fi.FileName = mp;
-                    fi.Attributes = FileAttributes.NotContentIndexed | FileAttributes.Directory | FileAttributes.Offline | FileAttributes.System;
-                    fi.CreationTime = DateTime.Now;
-                    fi.LastWriteTime = DateTime.Now;
-                    fi.LastAccessTime = DateTime.Now;
-                    files.Add(fi);
-                }
-            }
-
-            //apply pattern
-            List<FileInformation> filteredfiles = new List<FileInformation>();
-            Regex repattern = new Regex("^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$");
-            foreach (FileInformation fi in files)
-            {
-                if (repattern.IsMatch(fi.FileName))
-                {
-                    filteredfiles.Add(fi);
-                    LogFSActionOther("FindFilesPat", fileName, drive, "Result:{0}", fi.FileName);
-                }
-            }
-            files = filteredfiles;
-
-            LogFSActionError("FindFilesPat", fileName, drive, "Pattern:{0} Count:{1}", pattern, files.Count);
             return DokanError.ErrorSuccess;
         }
 
@@ -663,7 +594,7 @@ namespace Sshfs
         DokanError IDokanOperations.GetDiskFreeSpace(out long free, out long total,
                                                      out long used, DokanFileInfo info)
         {
-
+            Log("VFS GetDiskFreeSpace");
             if (lastActiveSubsytem != null)
             {
                 IDokanOperations ops = GetSubSystemOperations(lastActiveSubsytem);
@@ -692,7 +623,7 @@ namespace Sshfs
             filesystemName = "SSHVFS";
 
             features = FileSystemFeatures.CasePreservedNames | FileSystemFeatures.CaseSensitiveSearch |
-                       FileSystemFeatures.SupportsRemoteStorage | FileSystemFeatures.UnicodeOnDisk;
+                       FileSystemFeatures.SupportsRemoteStorage | FileSystemFeatures.UnicodeOnDisk | FileSystemFeatures.SupportsObjectIDs;
             //FileSystemFeatures.PersistentAcls
 
 

@@ -167,6 +167,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Security\KeyExchangeEllipticCurveDiffieHellman.cs" />
+    <Compile Include="Sftp\SftpFileSystemInformation.cs" />
     <Compile Include="ShellStream.NET40.cs" />
     <Compile Include="ExpectAsyncResult.cs" />
     <Compile Include="Security\KeyExchangeDiffieHellmanGroupSha1.cs" />
@@ -446,9 +447,6 @@
     <Compile Include="Sftp\SftpFile.cs" />
     <Compile Include="Sftp\SftpFileAttributes.cs" />
     <Compile Include="Sftp\SftpFileStream.cs" />
-    <Compile Include="Sftp\SftpFileSystemInformation.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Sftp\SftpListDirectoryAsyncResult.cs" />
     <Compile Include="Sftp\SftpMessage.cs" />
     <Compile Include="Sftp\SftpMessageTypes.cs">
@@ -474,7 +472,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Documentation\Renci.SshNet.content" />
-    <None Include="sshfs_4every1.pfx" />
     <None Include="WinSSH4e1-public.snk" />
   </ItemGroup>
   <ItemGroup>

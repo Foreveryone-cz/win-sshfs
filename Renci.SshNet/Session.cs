@@ -640,7 +640,12 @@ namespace Renci.SshNet
             // disconnect socket, and dispose it
             SocketDisconnectAndDispose();
 
-            if (_messageListenerCompleted != null)
+            if (reason == DisconnectReason.ConnectionLost)
+            {
+                var disconnected = Disconnected;
+                if (disconnected != null)
+                    disconnected(this, new EventArgs());
+            } else if ( _messageListenerCompleted != null)
             {
                 // at this point, we are sure that the listener thread will stop
                 // as we've disconnected the socket

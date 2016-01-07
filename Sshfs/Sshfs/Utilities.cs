@@ -53,7 +53,7 @@ namespace Sshfs
             }
         }
 
-        public static void Presist<T>(this List<T> list, string file, bool delete = false) where T : ISerializable
+        public static void Persist<T>(this List<T> list, string file, bool delete = false) where T : ISerializable
 
         {
             string filepath = datadir.FullName + "\\" + file;
@@ -74,7 +74,7 @@ namespace Sshfs
         }
 
 
-        public static void Presist<T>(this T obj, string file, bool delete = false) where T : ISerializable
+        public static void Persist<T>(this T obj, string file, bool delete = false) where T : ISerializable
         {
             string filepath = datadir.FullName + "\\" + file;
             if (delete)
@@ -121,7 +121,7 @@ namespace Sshfs
 
         public static IEnumerable<char> GetAvailableDrives()
         {
-            return Enumerable.Range('D', 22).Select(value => (char) value).Except(
+            return Enumerable.Range('D', 23).Select(value => (char) value).Except(
                 Directory.GetLogicalDrives().Select(drive => drive[0]));
         }
 

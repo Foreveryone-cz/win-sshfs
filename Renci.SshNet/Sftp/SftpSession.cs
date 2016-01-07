@@ -10,9 +10,6 @@ using Renci.SshNet.Sftp.Responses;
 using Renci.SshNet.Sftp.Requests;
 using System.Runtime.CompilerServices;
 
-
-[assembly: InternalsVisibleTo("WinSshFS, PublicKey=00240000048000009400000006020000002400005253413100040000010001005337866700b92e3a2a5d5be0292cdb0f2f6daa283526126b30169255b3c522f51593d15b5db31da4ddbe3e6ef5d9b80a05ddf4d1b1bca1c67ca62bf0b0c4d1b2ea3d4242027a2052b3c3cb17b98077a5c9f08143617ec3a1143c97c48bf27a378a9ec250220fb899f25c084599f477e36f699ec74aa452a3fd9e90007648a397")]
-
 namespace Renci.SshNet.Sftp
 {
     internal class SftpSession : SubsystemSession
