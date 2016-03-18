@@ -34,7 +34,7 @@ namespace Renci.SshNet.Security
             this.Session.MessageReceived += Session_MessageReceived;
 
             //  1. send SSH_MSG_KEY_DH_GEX_REQUEST
-            this.SendMessage(new KeyExchangeDhGroupExchangeRequest(1024,1024,1024));
+            this.SendMessage(new KeyExchangeDhGroupExchangeRequest(1024,2048,2048));
             
         }
 
@@ -64,8 +64,8 @@ namespace Renci.SshNet.Security
                 ServerPayload = this._serverPayload,
                 HostKey = this._hostKey,
                 MinimumGroupSize = 1024,
-                PreferredGroupSize = 1024,
-                MaximumGroupSize = 1024,
+                PreferredGroupSize = 2048,
+                MaximumGroupSize = 2048,
                 Prime = this._prime,
                 SubGroup = this._group,
                 ClientExchangeValue = this._clientExchangeValue,
