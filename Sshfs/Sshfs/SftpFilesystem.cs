@@ -258,16 +258,20 @@ namespace Sshfs
 
         private int GetUserId()
         {
-            // There was an exception being thrown in this method on windows.
-            // Not sure if OSVersion will bu in POSIX environment or not. but returning -1 prevents the FormatException to be thrown.
-            if(Environment.OSVersion.ToString().Contains("Microsoft"))
-                return -1;
-
             using (var cmd = _sshClient.CreateCommand("id -u ", Encoding.UTF8))
             // Thease commands seems to be POSIX so the only problem would be Windows enviroment
             {
                 cmd.Execute();
-                return cmd.ExitStatus == 0 ? Int32.Parse(cmd.Result) : -1;
+                int result;
+                if (cmd.ExitStatus == 0)
+                {
+                    Int32.TryParse(cmd.Result, out result);
+                    return (result != 0) ? result : -1;
+                }
+                else
+                {
+                    return -1;
+                }
             }
         }
 
