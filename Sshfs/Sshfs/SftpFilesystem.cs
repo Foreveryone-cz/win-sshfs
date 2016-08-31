@@ -100,7 +100,7 @@ namespace Sshfs
 
             this.Log("Connected %s", _volumeLabel);
             _sshClient.Connect();
-            
+
 
             _userId = GetUserId();
             if (_userId != -1)
@@ -252,7 +252,30 @@ namespace Sshfs
             using (var cmd = _sshClient.CreateCommand("id -G ", Encoding.UTF8))
             {
                 cmd.Execute();
-                return cmd.Result.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse);
+                if(cmd.Result.Contains("gid=") || cmd.Result.Contains("groups=")) {
+                    //uid=2000(shell) gid=2000(shell) groups=1003(graphics),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats) context=kernel
+                    Match m = Regex.Match(cmd.Result, @"gid=(?<gid>\d+?)\(.+?\)\s");
+                    List<int> gids = new List<int>();
+                    if (m.Success)
+                    {
+                        int gid = Int32.Parse(m.Groups["gid"].Value);
+                        gids.Add(gid);
+                    }
+
+                    m = Regex.Match(cmd.Result, @"groups=(?<gid>.+?)\s");
+                    if(m.Success)
+                    {
+                        String groups = m.Groups["gid"].Value.Replace(",", "");
+                        //Debug.WriteLine("groups is {0}", groups);
+                        foreach (Match mm in Regex.Matches(groups, @"(?<gid>\d+?)\(.+?\)"))
+                        {
+                            gids.Add(Int32.Parse(mm.Groups["gid"].Value));
+                        }
+                    }
+                    return gids.ToArray();
+                } else {
+                    return cmd.Result.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse);
+                }
             }
         }
 
@@ -261,8 +284,32 @@ namespace Sshfs
             using (var cmd = _sshClient.CreateCommand("id -u ", Encoding.UTF8))
             // Thease commands seems to be POSIX so the only problem would be Windows enviroment
             {
+                int uid;
                 cmd.Execute();
-                return cmd.ExitStatus == 0 ? Int32.Parse(cmd.Result) : -1;
+                if (cmd.ExitStatus != 0) return -1;
+                if (Int32.TryParse(cmd.Result, out uid))
+                {
+                    return uid;
+                }
+                else if (cmd.Result.Contains("uid="))
+                {
+                    ////uid=2000(shell) gid=2000(shell) groups=1003(graphics),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats) context=kernel
+                    Match m = Regex.Match(cmd.Result, @"uid=(?<value>\d+)\(.+\)\s");
+                    if (m.Success)
+                    {
+                        return Int32.Parse(m.Groups["value"].Value);
+                    }
+                    else
+                    {
+                        //unsupported format.
+                        return -1;
+                    }
+                }
+                else
+                {
+                    return -1;
+                }
+
             }
         }
 
@@ -310,14 +357,14 @@ namespace Sshfs
                 if (mode == FileMode.Open)
                 {
                     NtStatus status = OpenDirectory(fileName, info);
-                    
+
                     try
                     {
                         if (status == NtStatus.ObjectNameNotFound)
                         {
                             GetAttributes(fileName);
                             //no expception -> its file
-                            return (NtStatus)0xC0000103L; //STATUS_NOT_A_DIRECTORY    
+                            return (NtStatus)0xC0000103L; //STATUS_NOT_A_DIRECTORY
                         }
                     }
                     catch (SftpPathNotFoundException e)
@@ -374,7 +421,7 @@ namespace Sshfs
                         //check if only wants to read attributes,security info or open directory
                         {
                             info.IsDirectory = sftpFileAttributes.IsDirectory;
-                            
+
                             if (options.HasFlag(FileOptions.DeleteOnClose))
                             {
                                 return NtStatus.Error;//this will result in calling DeleteFile in Windows Explorer
@@ -496,7 +543,7 @@ namespace Sshfs
 
                 info.IsDirectory = true;
                 info.Context = new SftpContext(sftpFileAttributes);
-                
+
                 var dircache = CacheGetDir(path);
                 if (dircache != null && dircache.Item1 != sftpFileAttributes.LastWriteTime)
                 {
@@ -506,7 +553,7 @@ namespace Sshfs
                 return NtStatus.Success;
             }
             LogFSActionError("OpenDir", fileName, (SftpContext)info.Context,"Path not found");
-            //return NtStatus.ObjectPathNotFound;            
+            //return NtStatus.ObjectPathNotFound;
             return NtStatus.ObjectNameNotFound;
         }
 
@@ -585,7 +632,7 @@ namespace Sshfs
         void IDokanOperations.CloseFile(string fileName, DokanFileInfo info)
         {
             LogFSActionInit("CloseFile", fileName, (SftpContext)info.Context, "");
-            
+
             if (info.Context != null)
             {
                 SftpContext context = (SftpContext) info.Context;
@@ -634,7 +681,7 @@ namespace Sshfs
                     stream.Position = offset;
                     bytesRead = stream.Read(buffer, 0, buffer.Length);
 
-                    LogFSActionOther("ReadFile", fileName, (SftpContext)info.Context, "BuffLen:{0} Offset:{1} Read:{2}", buffer.Length, offset, bytesRead);                    
+                    LogFSActionOther("ReadFile", fileName, (SftpContext)info.Context, "BuffLen:{0} Offset:{1} Read:{2}", buffer.Length, offset, bytesRead);
                 }
             }
             LogFSActionSuccess("ReadFile", fileName, (SftpContext)info.Context, "");
@@ -645,8 +692,8 @@ namespace Sshfs
                                               DokanFileInfo info)
         {
             LogFSActionInit("WriteFile", fileName, (SftpContext)info.Context, "Ofs:{0} Len:{1}", offset, buffer.Length);
-               
-               
+
+
                 if (info.Context == null) // who would guess
                 {
                     SftpFileStream handle = Open(GetUnixPath(fileName), FileMode.Create);
@@ -672,11 +719,11 @@ namespace Sshfs
                     bytesWritten = buffer.Length;
                     // TODO there are still some apps that don't check disk free space before write
                 }
-              
+
                 LogFSActionSuccess("WriteFile", fileName, (SftpContext)info.Context, "Ofs:{1} Len:{0} Written:{2}", buffer.Length, offset, bytesWritten);
                 return NtStatus.Success;
             }
-        
+
 
         NtStatus IDokanOperations.FlushFileBuffers(string fileName, DokanFileInfo info)
         {
@@ -699,7 +746,7 @@ namespace Sshfs
 
             SftpFileAttributes sftpFileAttributes;
             string path = GetUnixPath(fileName);
-            
+
             if (context != null)
             {
                 /*
@@ -758,7 +805,7 @@ namespace Sshfs
             if (sftpFileAttributes.IsDirectory)
             {
                 fileInfo.Attributes |= FileAttributes.Directory;
-                fileInfo.Length = 0; // Windows directories use length of 0 
+                fileInfo.Length = 0; // Windows directories use length of 0
             }
             if (fileName.Length != 1 && fileName[fileName.LastIndexOf('\\') + 1] == '.')
                 //aditional check if filename isn't \\
@@ -851,7 +898,7 @@ namespace Sshfs
                             try
                             {
                                 SftpFile symTarget = GetSymbolicLinkTarget(file.FullName);
-                                
+
                                 if (symTarget.Attributes.IsDirectory)
                                 {
                                     fileInformation.Attributes |= FileAttributes.Directory;
@@ -988,7 +1035,7 @@ namespace Sshfs
                 }
                 CacheReset(path);
                 CacheResetParent(path); //parent cache need reset also
-                
+
                 //if context exists, update new rights manually is needed
                 SftpContext context = (SftpContext)info.Context;
                 if (info.Context != null)
@@ -1107,7 +1154,7 @@ namespace Sshfs
             {
                 //Log("DelateCacheHit:{0}", fileName);
                 bool test = dircache.Item2.Count == 0 || dircache.Item2.All(i => i.FileName == "." || i.FileName == "..");
-                
+
                 if (test)
                     LogFSActionSuccess("DeleteDir", fileName, (SftpContext)info.Context, "");
                 else
@@ -1123,11 +1170,11 @@ namespace Sshfs
                 LogFSActionError("DeleteDir", fileName, (SftpContext)info.Context, "Open failed, access denied?");
                 return NtStatus.AccessDenied;
             }
-            
+
             // usualy there are two entries . and ..
 
             bool test2 = dir.Count == 0 || dir.All(i => i.Name == "." || i.Name == "..");
-            
+
             if (test2)
                 LogFSActionSuccess("DeleteDir", fileName, (SftpContext)info.Context, "");
             else
@@ -1205,7 +1252,7 @@ namespace Sshfs
                     CacheResetParent(oldpath);
                     CacheResetParent(newpath);
                 }
-                
+
                 catch (SftpPermissionDeniedException)
                 {
                     LogFSActionError("MoveFile", oldName, (SftpContext)info.Context, "To:{0} Access denied", newName);
@@ -1257,7 +1304,7 @@ namespace Sshfs
             //Log("GetDiskFreeSpace");
             LogFSActionInit("GetDiskFreeSpace", this._volumeLabel, (SftpContext)info.Context, "");
 
-            
+
             Log("GetDiskFreeSpace");
 
             var diskSpaceInfo = CacheGetDiskInfo();
