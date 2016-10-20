@@ -277,7 +277,16 @@ namespace Sshfs
             // Thease commands seems to be POSIX so the only problem would be Windows enviroment
             {
                 cmd.Execute();
-                return cmd.ExitStatus == 0 ? Int32.Parse(cmd.Result) : -1;
+                int result;
+                if (cmd.ExitStatus == 0)
+                {
+                    Int32.TryParse(cmd.Result, out result);
+                    return (result != 0) ? result : -1;
+                }
+                else
+                {
+                    return -1;
+                }
             }
         }
 
