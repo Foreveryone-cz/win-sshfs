@@ -68,8 +68,13 @@ namespace Sshfs
 
         private void tryMountVFS()
         {
-            try
+            if (virtualDrive.Letter==' ')
             {
+                return;
+            }
+
+            try
+            {    
                 virtualDrive.Mount();
             }
             catch (Exception ex)
@@ -94,7 +99,7 @@ namespace Sshfs
         {
 
           
-            notifyIcon.Text = Text = String.Format("Sshfs Manager - 4every1 edition - v. {0}", Assembly.GetEntryAssembly().GetName().Version);
+            notifyIcon.Text = Text = String.Format("Sshfs Manager - WinSshFS Foreveryone - v. {0}", Assembly.GetEntryAssembly().GetName().Version);
             portBox.Minimum = IPEndPoint.MinPort;
             portBox.Maximum = IPEndPoint.MaxPort;
 
@@ -110,15 +115,19 @@ namespace Sshfs
 
             startupMenuItem.Checked = Utilities.IsAppRegistredForStarup();
 
-            // _drives.Presist("config.xml",true);            
+            // _drives.Persist("config.xml",true);            
 
-
-            virtualDrive = virtualDrive.Load("vfs.xml");
+            try {
+                virtualDrive = virtualDrive.Load("vfs.xml");
+            }
+            catch {
+                MessageBox.Show("Unable to load virtual drive info xml file.");
+            }
             if (virtualDrive == null)
             {
                 virtualDrive = new VirtualDrive
                 {
-                    Letter = 'Z'
+                    Letter = ' '
                 };
             }
             virtualDrive.StatusChanged += drive_VFSStatusChanged;
@@ -128,7 +137,13 @@ namespace Sshfs
             buttonVFSupdate();
 
 
-            _drives.Load("config.xml");
+            try {
+                _drives.Load("config.xml");
+            }
+            catch
+            {
+                MessageBox.Show("Unable to load config file.");
+            }
 
 
             driveListView.BeginUpdate();
@@ -265,6 +280,12 @@ namespace Sshfs
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            if (_dirty)
+            {
+                _drives.Persist("config.xml");
+                //virtualDrive.per
+            }
+
             if (e.CloseReason == CloseReason.UserClosing)
             {
                 Visible = false;
@@ -273,11 +294,6 @@ namespace Sshfs
             else
             {
                 Debug.WriteLine("FormCOveride");
-                if (_dirty)
-                {
-                    _drives.Presist("config.xml");
-                    //virtualDrive.per
-                }
                 notifyIcon.Visible = false;
             }
             base.OnFormClosing(e);
@@ -303,7 +319,8 @@ namespace Sshfs
                                 Port = 22,
                                 Root = ".",
                                 Letter = letter,
-                                MountPoint = ""
+                                MountPoint = "",
+                                KeepAliveInterval = 30
                             };
             
 
@@ -413,6 +430,11 @@ namespace Sshfs
                     default: authCombo.SelectedIndex=0; break;
                 }
 
+                if(drive.KeepAliveInterval <= 0)
+                {
+                    drive.KeepAliveInterval = 1;
+                }
+
                 updateLetterBoxCombo(drive);
 
                 passwordBox.Text = drive.Password;
@@ -425,6 +447,7 @@ namespace Sshfs
                 proxyHostBox.Text = drive.ProxyHost;
                 proxyLoginBox.Text = drive.ProxyUser;
                 proxyPassBox.Text = drive.ProxyPass;
+                keepAliveIntervalBox.Value = drive.KeepAliveInterval;
                 muButton.Text = drive.Status == DriveStatus.Mounted ? "Unmount" : "Mount";
                 muButton.Image = drive.Status == DriveStatus.Mounted ? Resources.unmount : Resources.mount;
                 muButton.Enabled = (drive.Status == DriveStatus.Unmounted || drive.Status == DriveStatus.Mounted);
@@ -487,6 +510,7 @@ namespace Sshfs
             drive.ProxyHost = proxyHostBox.Text;
             drive.ProxyUser = proxyLoginBox.Text;
             drive.ProxyPass = proxyPassBox.Text;
+            drive.KeepAliveInterval = (int) keepAliveIntervalBox.Value;
             _dirty = true;
         }
 
@@ -673,8 +697,7 @@ namespace Sshfs
         {
             SystemEvents.PowerModeChanged -= SystemEvents_PowerModeChanged;
             
-            //_drives.Presist("config.xml");
-           ;
+            _drives.Persist("config.xml");
 
             Parallel.ForEach(_drives.Where(d => d.Status != DriveStatus.Unmounted), d =>
                                                                                         {
@@ -748,13 +771,15 @@ namespace Sshfs
                 return;
 
             virtualDrive.Letter = virtualDriveCombo.Text[0];
-            virtualDrive.Presist("vfs.xml");
+            virtualDrive.Persist("vfs.xml");
 
             _updateLockvirtualDriveBox = true; ;
 
             updateLetterBoxCombo(null);
 
             _updateLockvirtualDriveBox = false;
+
+            this.buttonVFSupdate();
         }
 
         private void letterBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -786,15 +811,15 @@ namespace Sshfs
 
         private void buttonVFSupdate()
         {
-            BeginInvoke(new MethodInvoker(() =>
+            this.BeginInvoke(new MethodInvoker(() =>
             {
                 buttonVFSMount.Text = virtualDrive.Status == DriveStatus.Mounted
                                         ? "Unmount"
                                         : "Mount";
                 buttonVFSMount.Image = virtualDrive.Status == DriveStatus.Mounted
-                                         ? Resources.unmount
-                                         : Resources.mount;
-                buttonVFSMount.Enabled = true;
+                                            ? Resources.unmount
+                                            : Resources.mount;
+                buttonVFSMount.Enabled = (virtualDrive.Letter != ' ') || virtualDrive.Status == DriveStatus.Mounted;
             }));
         }
 
@@ -804,6 +829,57 @@ namespace Sshfs
             buttonVFSupdate();
         }
 
+        private void contextMenu_PreviewKeyDown(object sender, System.Windows.Forms.PreviewKeyDownEventArgs e)
+        {
+            if (mountMenuItem.Selected && (e.KeyCode == Keys.Right || e.KeyCode == Keys.Enter))
+            {
+                mountMenuItem.ShowDropDown();
+            }
+            else
+            {
+                mountMenuItem.HideDropDown();
+            }
+            if (unmountMenuItem.Selected && (e.KeyCode == Keys.Right || e.KeyCode == Keys.Enter))
+            {
+                unmountMenuItem.ShowDropDown();
+            }
+            else
+            {
+                unmountMenuItem.HideDropDown();
+            }
+        }
+
+        private void mountMenuItem_PreviewKeyDown(object sender, System.Windows.Forms.PreviewKeyDownEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.Right:
+                    contextMenu.AutoClose = false;
+                    mountMenuItem.DropDown.AutoClose = false;
+                    break;
+                default:
+                    contextMenu.AutoClose = true;
+                    mountMenuItem.DropDown.AutoClose = true;
+                    break;
+
+            }
+        }
+
+        private void unmountMenuItem_PreviewKeyDown(object sender, System.Windows.Forms.PreviewKeyDownEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.Right:
+                    contextMenu.AutoClose = false;
+                    unmountMenuItem.DropDown.AutoClose = false;
+                    break;
+                default:
+                    contextMenu.AutoClose = true;
+                    unmountMenuItem.DropDown.AutoClose = true;
+                    break;
+
+            }
+        }
 
     }
 }

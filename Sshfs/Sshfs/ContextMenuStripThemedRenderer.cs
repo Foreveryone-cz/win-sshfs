@@ -146,7 +146,7 @@ namespace Sshfs
             }
         }
 
-        protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
+      /*  protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
         {
             if (e.ToolStrip.IsDropDown && IsSupported)
             {
@@ -177,7 +177,7 @@ namespace Sshfs
             {
                 base.OnRenderImageMargin(e);
             }
-        }
+        }*/
 
 
     }

@@ -16,32 +16,46 @@
 // THE SOFTWARE.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using Renci.SshNet.Sftp;
+using Renci.SshNet.Common;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Sshfs
 {
     internal sealed class SftpContextStream : Stream
     {
+        /// <summary>
+        ///   Effective size of readRequest. 
+        /// </summary>
+        private int optimalReadRequestSize;
+        private byte[] readBuffer;
+        /// <summary>
+        ///  Position of readBuffer data in source stream
+        /// </summary>
+        private long readBufferPosition;
+        /// <summary>
+        ///  Valid count of data in read buffer
+        /// </summary>
+        private int readBufferCount;
+        private bool readBufferIsAtEOF;
 
-        private const int WRITE_BUFFER_SIZE = 32 * 1024 - 38;// (1024*32 - 38)*4;
-        private const int READ_BUFFER_SIZE = 128*1024;
+        private int WRITE_BUFFER_SIZE;
+        
+
         private readonly byte[] _writeBuffer;
-        private byte[] _readBuffer = new byte[0];
 
-
-        private readonly SftpSession _session;
+        private readonly ISftpSession _session;
         private SftpFileAttributes _attributes;
         private byte[] _handle;
 
         private bool _writeMode;
         private int _writeBufferPosition;
-        private int _readBufferPosition;
         private long _position;
 
-        internal SftpContextStream(SftpSession session, string path, FileMode mode, FileAccess access,
+        internal SftpContextStream(ISftpSession session, string path, FileMode mode, FileAccess access,
                                    SftpFileAttributes attributes)
         {
             Flags flags = Flags.None;
@@ -93,6 +107,11 @@ namespace Sshfs
 
             _attributes = attributes ?? _session.RequestFStat(_handle);
 
+            this.optimalReadRequestSize = checked((int)this._session.CalculateOptimalReadLength(uint.MaxValue));
+            this.readBuffer = new byte[this.optimalReadRequestSize];
+            this.readBufferCount = 0;
+
+            WRITE_BUFFER_SIZE = (int)_session.CalculateOptimalWriteLength(65536, _handle);
 
             if (access.HasFlag(FileAccess.Write))
             {
@@ -112,10 +131,6 @@ namespace Sshfs
                 {
                     if (_writeMode)
                     {
-
-
-
-
                         //FlushWriteBuffer();
                         SetupRead();
                         _attributes = _session.RequestFStat(_handle);
@@ -155,17 +170,7 @@ namespace Sshfs
             {
                 if (!_writeMode)
                 {
-                    long newPosn = _position - _readBufferPosition;
-                    if (value >= newPosn && value <
-                        (newPosn + _readBuffer.Length))
-                    {
-                        _readBufferPosition = (int) (value - newPosn);
-                    }
-                    else
-                    {
-                        _readBufferPosition = 0;
-                        _readBuffer = new byte[0];
-                    }
+
                 }
                 else
                 {
@@ -197,71 +202,193 @@ namespace Sshfs
                 }
                 else
                 {
-                    /*  if (_bufferPosn < _bufferLen)
-                {
-                    _position -= _bufferPosn;
-                }*/
-                    _readBufferPosition = 0;
-                    _readBuffer = new byte[0];
                 }
             }
         }
 
-
-        public override int Read(byte[] buffer, int offset, int count)
+        /// <summary>
+        ///  Asynchronous read, will copy data to buffer and call Received.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="count"></param>
+        /// <param name="buffer"></param>
+        /// <param name="bufferOffset"></param>
+        /// <param name="Received"></param>
+        private void ReadAsync(long position, int count, byte[] buffer, int bufferOffset, Action<int> Received)
         {
-            int readLen = 0;
+#if DEBUG
+            Debug.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + "\t" + " Sending Async read for offset " + bufferOffset);
+#endif
+            this._session.RequestReadAsync(_handle, (ulong)(position), (uint)count,
+                    response => {
+#if DEBUG
+                        Debug.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + "\t" + " Got data for offset " + bufferOffset);
+#endif
+                        if (response.Data != null)
+                        {
+                            lock (buffer)
+                            {
+                                Buffer.BlockCopy(response.Data, 0, buffer, bufferOffset, response.Data.Length);
+                                Received(response.Data.Length);
+                            }
+                        }
+                        else
+                        {
+                            Received(0);
+                        }
+                    }
+            );
+        }
 
+        /// <summary>
+        ///   Normal read
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="count"></param>
+        /// <param name="buffer"></param>
+        /// <param name="bufferOffset"></param>
+        /// <returns>Length of received data</returns>
+        private int ReadSync(long position, int count, byte[] buffer, int bufferOffset)
+        {
+            byte[] data = this._session.RequestRead(this._handle, (ulong)position, (uint)count);
+            Buffer.BlockCopy(data, 0, buffer, bufferOffset, data.Length);
+            return data.Length;
+        }
 
-            // Lock down the file stream while we do this.
+        /// <summary>
+        ///   Update read buffer state with data at position
+        /// </summary>
+        /// <param name="position"></param>
+        private void ReadDataToBufferSync(long position)
+        {
+            this.readBufferCount = this.ReadSync(position, this.optimalReadRequestSize, this.readBuffer, 0);
+            this.readBufferPosition = position;
+            this.readBufferIsAtEOF = this.readBufferCount != this.optimalReadRequestSize || this.readBufferCount == 0;
+        }
 
-            // Set up for the read operation.
-            SetupRead();
+        private void ReadDataToBufferASync(long position)
+        {
+            this.ReadAsync(position, this.readBuffer.Length, this.readBuffer, 0, 
+                received => {
+                    this.readBufferPosition = position;
+                    this.readBufferCount = received;
+                });
+        }
 
-            // Read data into the caller's buffer.
-            while (count > 0)
+        /// <summary>
+        ///   Tryes to satisfy request from readBuffer. Returns count of bytes that hits the buffer.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="count"></param>
+        /// <param name="dst"></param>
+        /// <param name="dstOffset"></param>
+        /// <param name="isOEF">true if buffer war read to the end and its also EOF</param>
+        /// <returns></returns>
+        private int getDataFromBuffer(long position, int count, byte[] dst, int dstOffset, ref bool isEOF)
+        {
+            if ((position >= this.readBufferPosition) &&
+                (position < this.readBufferPosition + this.readBufferCount)) //atleast partial hit
             {
-                // How much data do we have available in the buffer?
-                int tempLen = _readBuffer.Length - _readBufferPosition;
-                if (tempLen <= 0)
+                int hitPosition = (int)(position - this.readBufferPosition);
+                int hitLength = Math.Min(count, this.readBufferCount - hitPosition);
+                Buffer.BlockCopy(this.readBuffer, hitPosition, dst, dstOffset, hitLength);
+
+                isEOF = (this.readBufferIsAtEOF) && (hitPosition + hitLength == this.readBufferCount);
+                return hitLength;
+            }
+            return 0;
+        }
+
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <param name="position">Position to read from</param>
+        /// <param name="count">Count of bytes, unlimited</param>
+        /// <param name="dst">Destination buffer</param>
+        /// <param name="dstOffset">Offset in destination buffer to write from</param>
+        /// <returns>Count of bytes readed to dst</returns>
+        public int getDataAt(long position, int count, byte[] dst, int dstOffset = 0)
+        {
+            int received = 0;
+
+            bool isEOF = false;
+            int hitLength = this.getDataFromBuffer(position, count, dst, dstOffset, ref isEOF);
+            if (hitLength > 0)
+            {
+#if DEBUG
+                Console.WriteLine("Readbuffer hit " + hitLength);
+#endif
+                received    += hitLength;
+                count       -= hitLength;
+                position    += hitLength;
+                dstOffset   += hitLength;
+                if (isEOF || count == 0)  //nothing remains
                 {
-                    _readBufferPosition = 0;
-
-                    _readBuffer = _session.RequestRead(_handle, (ulong) _position, READ_BUFFER_SIZE);
-
-
-                    if (_readBuffer.Length > 0)
-                    {
-                        tempLen = _readBuffer.Length;
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    _position += received;
+                    return received;
                 }
+            }
 
+            //small request, we want to load more data than requested and store them in buffer:
+            if (count < this.optimalReadRequestSize) 
+            {
+                this.ReadDataToBufferSync(position);
+                hitLength = this.getDataFromBuffer(position, count, dst, dstOffset, ref isEOF);
 
-                // Don't read more than the caller wants.
-                if (tempLen > count)
-                {
-                    tempLen = count;
-                }
-
-                // Copy stream data to the caller's buffer.
-                Debug.WriteLine("Copy:{0},{1},{2},{3},{4}",_readBuffer,_readBufferPosition,buffer,offset,tempLen);
-                Buffer.BlockCopy(_readBuffer, _readBufferPosition, buffer, offset, tempLen);
-
-                // Advance to the next buffer positions.
-                readLen += tempLen;
-                offset += tempLen;
-                count -= tempLen;
-                _readBufferPosition += tempLen;
-                _position += tempLen;
+                _position = position + received + hitLength;
+                return received + hitLength;
             }
 
 
-            // Return the number of bytes that were read to the caller.
-            return readLen;
+            //request with big buffers remains:
+
+            List<EventWaitHandle> waits = new List<EventWaitHandle>();
+
+            int readCount = count;
+            int winOffset = 0;
+            int receivedTotal = 0;
+#if DEBUG
+            DateTime startTime = DateTime.Now;
+#endif
+            while (readCount > 0)
+            {
+                int winSize = readCount > this.optimalReadRequestSize ? this.optimalReadRequestSize : readCount;
+
+                EventWaitHandle wait = new AutoResetEvent(false);
+                wait.Reset();
+                waits.Add(wait);
+
+                this.ReadAsync(
+                            position + winOffset, winSize,
+                            dst, dstOffset + winOffset,
+                            receivedStatus => {
+                                Interlocked.Add(ref receivedTotal, receivedStatus);
+                                wait.Set();
+                            }
+                );
+
+                winOffset += winSize;
+                readCount -= winSize;
+            }
+
+            if (!WaitHandle.WaitAll(waits.ToArray(), 20000))
+            {
+                throw new SshOperationTimeoutException("Timeout on wait");
+            }
+#if DEBUG
+            int rrTime = (DateTime.Now - startTime).Milliseconds;
+            Console.WriteLine(rrTime+" with "+waits.Count.ToString());
+#endif
+            _position = _position + received + receivedTotal;
+            return received + receivedTotal;
+        }
+
+
+        public override int Read(byte[] buffer, int bufferOffset, int bufferCount)
+        {
+            // Set up for the read operation.
+            SetupRead();
+            return this.getDataAt(this._position, bufferCount, buffer, bufferOffset);
         }
 
 
@@ -329,7 +456,15 @@ namespace Sshfs
                     {
                         int chunkcount = remainingcount <= WRITE_BUFFER_SIZE ? remainingcount : WRITE_BUFFER_SIZE;
                         Buffer.BlockCopy(buffer, offset+suboffset, _writeBuffer, _writeBufferPosition/*always zero*/, chunkcount);
-                        _session.RequestWrite(_handle, (ulong)(_position+suboffset), _writeBuffer, null, null);
+                        _session.RequestWrite(
+                            _handle, 
+                            (ulong)(_position+suboffset), 
+                            _writeBuffer, 
+                            0,
+                            chunkcount, 
+                            null, 
+                            null
+                        );
                         remainingcount -= chunkcount;
                         suboffset += chunkcount;
                     }
@@ -356,7 +491,15 @@ namespace Sshfs
             if (_writeBufferPosition == WRITE_BUFFER_SIZE)
             {
                 
-                    _session.RequestWrite(_handle, (ulong) (_position - WRITE_BUFFER_SIZE), _writeBuffer, null,null);
+                    _session.RequestWrite(
+                        _handle, 
+                        (ulong) (_position - WRITE_BUFFER_SIZE), 
+                        _writeBuffer, 
+                        0,
+                        _writeBufferPosition, 
+                        null,
+                        null
+                    );
                 
 
                 _writeBufferPosition = 0;
@@ -394,41 +537,20 @@ namespace Sshfs
 
 
                
-                    _session.RequestWrite(_handle, (ulong) (_position - _writeBufferPosition), data, null,null);
+                    _session.RequestWrite(
+                        _handle, 
+                        (ulong) (_position - _writeBufferPosition), 
+                        data, 
+                        0, 
+                        _writeBufferPosition, 
+                        null, 
+                        null
+                    );
                 
 
                 _writeBufferPosition = 0;
             }
         }
-
-/*
-        private void FlushWriteBufferNoPipelining()
-        {
-            const int maximumDataSize = 1024 * 32 - 38;
-            Console.WriteLine("FLUSHHHH the water no pipe");
-            if (_writeBufferPosition > 0)
-            {
-                Console.WriteLine("Written:{0}", _writeBufferPosition);
-       
-                 int block = ((_writeBufferPosition - 1) / maximumDataSize) + 1;
-                 for (int i = 0; i < block; i++)
-                 {
-                     var blockBufferSize = Math.Min(_writeBufferPosition - maximumDataSize * i, maximumDataSize);
-                     var blockBuffer = new byte[blockBufferSize];
-
-                     Buffer.BlockCopy(_writeBuffer, i*maximumDataSize, blockBuffer, 0, blockBufferSize);
-
-                     using (var wait = new AutoResetEvent(false))
-                     {
-                         _session.RequestWrite(_handle, (ulong) (_position - _writeBufferPosition+i*maximumDataSize), blockBuffer, wait);
-                     }
-                 }
-
-                _writeBufferPosition = 0;
-            }
-        }
-*/
-
 
         private void SetupRead()
         {
@@ -444,13 +566,7 @@ namespace Sshfs
         {
             if (_writeMode) return;
 
-            /*  if (_bufferPosn < _bufferLen)
-            {
-                _position -= _bufferPosn;
-            }*/
-            _readBufferPosition = 0;
             _writeBufferPosition = 0;
-            _readBuffer = new byte[0];
             _writeMode = true;
         }
     }

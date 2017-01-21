@@ -38,9 +38,9 @@ namespace Sshfs
     public class SftpDrive : IDisposable, ISerializable
     {
         
-        private readonly CancellationTokenSource _mountCancel = new CancellationTokenSource();
-        private readonly AutoResetEvent _pauseEvent = new AutoResetEvent(false);
-        private readonly CancellationTokenSource _threadCancel = new CancellationTokenSource();
+        private CancellationTokenSource _mountCancel = new CancellationTokenSource();
+        private AutoResetEvent _pauseEvent = new AutoResetEvent(false);
+        private CancellationTokenSource _threadCancel = new CancellationTokenSource();
         private bool _exeptionThrown;
         internal SftpFilesystem _filesystem;
       
@@ -85,6 +85,8 @@ namespace Sshfs
         public string ProxyUser { get; set; }
         public string ProxyPass { get; set; }
 
+        public int KeepAliveInterval { get; set; }
+
         public SftpDrive(){}
        
         private void OnStatusChanged(EventArgs args)
@@ -120,20 +122,28 @@ namespace Sshfs
                     Proxy = s[0];
                 }
             }
+            
+            if(KeepAliveInterval <= 0)
+            {
+                KeepAliveInterval = 1;
+            }
 
-            ConnectionInfo info;
+            ConnectionInfo info = null;
             switch (ConnectionType)
             {
                 case ConnectionType.Pageant:
                     var agent = new PageantProtocol();
-                    if (pt == ProxyTypes.None) {
-                      info = new AgentConnectionInfo(Host, Port, Username, agent);
+                    if (pt == ProxyTypes.None)
+                    {
+                        info = new AgentConnectionInfo(Host, Port, Username, agent);
                     }
-                    else if (ProxyUser.Length>0) {
-                      info = new AgentConnectionInfo(Host, Port, Username, pt, Proxy, ProxyPort, ProxyUser, ProxyPass, agent);
+                    else if (ProxyUser.Length > 0)
+                    {
+                        info = new AgentConnectionInfo(Host, Port, Username, pt, Proxy, ProxyPort, ProxyUser, ProxyPass, agent);
                     }
-                    else {
-                      info = new AgentConnectionInfo(Host, Port, Username, pt, Proxy, ProxyPort, agent);
+                    else
+                    {
+                        info = new AgentConnectionInfo(Host, Port, Username, pt, Proxy, ProxyPort, agent);
                     }
                     break;
                 case ConnectionType.PrivateKey:
@@ -161,21 +171,75 @@ namespace Sshfs
             }
 
             _connection = Settings.Default.UseNetworkDrive ? String.Format("\\\\{0}\\{1}\\{2}", info.Host, Root, info.Username) : Name;
+            info.Timeout = new TimeSpan(0,0,5);
 
             _filesystem = new SftpFilesystem(info, Root,_connection,Settings.Default.UseOfflineAttribute,false, (int) Settings.Default.AttributeCacheTimeout,  (int) Settings.Default.DirContentCacheTimeout);
             Debug.WriteLine("Connecting...");
-            _filesystem.KeepAliveInterval = new TimeSpan(0, 0, 60);
+            _filesystem.KeepAliveInterval = new TimeSpan(0, 0, KeepAliveInterval);
             _filesystem.Connect();
+            _filesystem.Disconnected += OnDisconnectedFSEvent;
+            _filesystem.ErrorOccurred += OnDisconnectedFSEvent;
         }
+
+        Thread reconnectThread;
+
+        private void OnDisconnectedFSEvent(object sender, EventArgs ea)
+        {
+            this.startReconnect();
+        }
+
+        private void startReconnect()
+        {
+            this.stopReconnect();
+
+            this.reconnectThread = new Thread(new ThreadStart(reconnectJob));
+            this.reconnectThread.Start();
+        }
+        private void stopReconnect()
+        {
+            this._threadCancel.Cancel();
+            if (this.reconnectThread != null && this.reconnectThread.IsAlive)
+            {
+                this.reconnectThread.Abort();
+            }
+            this.reconnectThread = null;
+        }
+
+        private void reconnectJob()
+        {
+            this.Unmount();
+
+            while (this.Status != DriveStatus.Mounted)
+            {
+                try
+                {
+                    if (_threadCancel.IsCancellationRequested)
+                    {
+                        Debug.WriteLine("Reconnect thread:Cancel");
+                        break;
+                    }
+                    this.Mount();
+                }
+                catch 
+                {}
+                if (this.Status != DriveStatus.Mounted){
+                    Thread.Sleep(1000);
+                }
+            }
+        }
+
+        
 
         private void SetupMountThread()
         {
-            if (_mountThread == null)
-            {
-                Debug.WriteLine("Thread:Created");
-                _mountThread = new Thread(MountLoop) {IsBackground = true};
-                _mountThread.Start();
-            }
+            _threadCancel = new CancellationTokenSource();
+            _pauseEvent = new AutoResetEvent(false);
+            _mountCancel = new CancellationTokenSource();
+
+            Debug.WriteLine("Thread:Created");
+            _mountThread = new Thread(MountLoop) {IsBackground = true};
+
+            _mountThread.Start();
         }
 
         private void MountLoop()
@@ -201,7 +265,7 @@ namespace Sshfs
                 threadCount=1;
 #endif
                     _filesystem.Mount(String.Format("{0}:\\", Letter),
-                        Settings.Default.UseNetworkDrive?DokanOptions.NetworkDrive|DokanOptions.KeepAlive: DokanOptions.RemovableDrive|DokanOptions.KeepAlive, threadCount);
+                        Settings.Default.UseNetworkDrive?DokanOptions.NetworkDrive: DokanOptions.RemovableDrive, threadCount);
                 }
                 catch (Exception e)
                 {
@@ -223,7 +287,7 @@ namespace Sshfs
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Mount()
         {
-            //Debug.WriteLine("Mount");
+            Debug.WriteLine("Mount");
            
 
             if (Directory.GetLogicalDrives().Any(drive=>drive[0]==Letter))
@@ -255,7 +319,7 @@ namespace Sshfs
                            Directory.GetLogicalDrives().All(
                                drive => drive[0] != Letter))
                     {
-                        Thread.Sleep(200);
+                         Thread.Sleep(200);
                     }
                 }, _mountCancel.Token);
 
@@ -283,20 +347,22 @@ namespace Sshfs
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Unmount()
         {
-            Debug.WriteLine("Unmount");
+            if (this.reconnectThread != Thread.CurrentThread)
+            {
+                this.stopReconnect();
+            }
 
+            if (_threadCancel != null) _threadCancel.Cancel();
+            if (_pauseEvent != null) _pauseEvent.Set();
+
+            Debug.WriteLine("Unmount");
             Status = DriveStatus.Unmounting;
             try
             {
-               // Dokan.Unmount(Letter);
                 Dokan.RemoveMountPoint(String.Format("{0}:\\", Letter));
                 if (_filesystem != null)
                 {
-
                     _filesystem.Dispose();
-
-
-                   
                 }
             }
             catch
@@ -306,7 +372,9 @@ namespace Sshfs
             }
             finally
             {
-                _filesystem = null;  
+                _filesystem = null;
+                Status = DriveStatus.Unmounted;
+                OnStatusChanged(EventArgs.Empty);
             }
 
         }
@@ -324,6 +392,7 @@ namespace Sshfs
 
             if (_threadCancel != null) _threadCancel.Cancel();
             if (_pauseEvent != null) _pauseEvent.Set();
+
             try
             {
                 Dokan.RemoveMountPoint(String.Format("{0}:\\", Letter));
@@ -337,7 +406,8 @@ namespace Sshfs
             }
             catch
             {
-                Status = DriveStatus.Unmounted;
+                if(Status != DriveStatus.Unmounted)
+                    Status = DriveStatus.Unmounted;
             }
             finally
             {
@@ -371,6 +441,14 @@ namespace Sshfs
               ProxyPass = info.GetString("proxyPass");
             }
             catch { }
+            try
+            {
+                KeepAliveInterval = info.GetInt16("keepAliveInterval");
+            }
+            catch
+            {
+                KeepAliveInterval = 1;
+            }
             ConnectionType = (ConnectionType) info.GetByte("c");
             if (ConnectionType == ConnectionType.Password)
             {
@@ -408,6 +486,7 @@ namespace Sshfs
             info.AddValue("proxyHost", ProxyHost);
             info.AddValue("proxyUser", ProxyUser);
             info.AddValue("proxyPass", ProxyPass);
+            info.AddValue("keepAliveInterval", KeepAliveInterval);
             if (ConnectionType == ConnectionType.Password)
             {
                 info.AddValue("p", Utilities.ProtectString(Password));

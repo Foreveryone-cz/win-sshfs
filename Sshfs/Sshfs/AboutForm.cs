@@ -10,7 +10,10 @@ namespace Sshfs
     public partial class AboutForm : Form
     {
         private static readonly string _sshfsText = String.Format("Sshfs {0}", Assembly.GetEntryAssembly().GetName().Version);
-        private static readonly string _dokanText = String.Format("Dokan {0}.{1}.{2}.{3}",DokanNet.Dokan.Version / 1000, (DokanNet.Dokan.Version%1000) / 100, (DokanNet.Dokan.Version%100) / 10, DokanNet.Dokan.Version % 10);
+        private static readonly string _dokanText =
+                        (DokanNet.Dokan.Version < 600)
+                                ? String.Format("Dokan {0}.{1}.{2}",     DokanNet.Dokan.Version / 100, (DokanNet.Dokan.Version % 100) / 10, DokanNet.Dokan.Version % 10)
+                                : String.Format("Dokan {0}.{1}.{2}.{3}", DokanNet.Dokan.Version / 1000, (DokanNet.Dokan.Version % 1000) / 100, (DokanNet.Dokan.Version % 100) / 10, DokanNet.Dokan.Version % 10);
         private static readonly string _sshnetText = String.Format("SSH.NET {0}", Assembly.GetAssembly(typeof (SshClient)).GetName().Version);
 
         public AboutForm()

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" Name="WinSshFS" Language="1033" Version="1.6.1.9" Manufacturer="WinSshFS" UpgradeCode="1e0bbf09-5c6f-4203-b674-5d51a13431b0">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <Media Id="1" Cabinet="WinSshFS.cab" EmbedCab="yes" />
+    
+		<MajorUpgrade 
+      DowngradeErrorMessage="A newer version of [ProductName] is already installed." 
+      AllowSameVersionUpgrades="no"
+    />
+
+		<Feature Id="ProductFeature" Title="WinSshFS" Level="1">
+			<ComponentGroupRef Id="WinSshFSWithLibraries" />
+      <ComponentRef Id="ApplicationShortcutDesktop" />
+    </Feature>
+	</Product>
+
+	<Fragment>        
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="INSTALLFOLDER" Name="WinSshFS">
+          <Directory Id="INSTALLFOLDERDE" Name="de" />
+          <Directory Id="INSTALLFOLDERFR" Name="fr" />
+          <Directory Id="INSTALLFOLDERSV" Name="sv" />
+        </Directory>
+			</Directory>		
+      <Directory Id="DesktopFolder" Name="Desktop">
+        <Component Id="ApplicationShortcutDesktop" Guid="C42C05BE-D773-4437-B7C2-1BDFCE9BE854">
+          <Shortcut Id="ApplicationDesktopShortcut"
+              Name="WinSshFS"
+              Description="WinSshFS Foreveryone"
+              Target="[INSTALLFOLDER]WinSshFs.exe"
+              WorkingDirectory="INSTALLFOLDER"/>
+          <RemoveFolder Id="DesktopFolder" On="uninstall"/>
+          <RegistryValue
+              Root="HKCU"
+              Key="Software\WinSshFs"
+              Name="installed"
+              Type="integer"
+              Value="1"
+              KeyPath="yes"/>
+        </Component>
+      </Directory>
+    </Directory>
+	</Fragment>
+
+	<Fragment>
+		<ComponentGroup Id="WinSshFSWithLibraries">
+			<Component Id="WinSshFS" Guid="BC9856DD-34B6-4249-9258-39E7F1EE1D8B"  Directory="INSTALLFOLDER">
+				<File Source="$(var.Sshfs.TargetPath)" KeyPath="yes" Checksum="yes" />
+        <File Source="$(var.Sshfs.TargetPath).config" />
+        <File Source="$(var.Sshfs.TargetDir)/app.ico" />
+      </Component>
+      
+      <Component Id="SshNet" Guid="95947403-FDD8-4622-99A1-1FF41BB8EB1A"  Directory="INSTALLFOLDER">
+        <File Source="$(var.Sshfs.TargetDir)/Renci.SshNet.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+      
+      <Component Id="DokanNet" Guid="137CE10E-9025-4EA5-936F-4C6F9CCC85DD"  Directory="INSTALLFOLDER">
+        <File Source="$(var.Sshfs.TargetDir)/DokanNet.dll" KeyPath="yes" Checksum="yes" />
+      </Component>
+      <Component Id="DokanNetDe" Guid="AD39FF2B-D817-4662-8130-492362D6031A" Directory="INSTALLFOLDERDE">
+        <File Id="DokanNetDeDLL" Source="$(var.Sshfs.TargetDir)/de/DokanNet.resources.dll"  Checksum="yes" />
+      </Component>
+      <Component Id="DokanNetFr" Guid="775ECE2B-D85B-4F5C-8813-F641EF8FE4EB" Directory="INSTALLFOLDERFR">
+        <File Id="DokanNetFrDLL" Source="$(var.Sshfs.TargetDir)/fr/DokanNet.resources.dll"  Checksum="yes" />
+      </Component>
+      <Component Id="DokanNetSv" Guid="2D929B0A-654C-46B7-AFFA-C1E86D743429" Directory="INSTALLFOLDERSV">
+        <File Id="DokanNetSvDLL" Source="$(var.Sshfs.TargetDir)/sv/DokanNet.resources.dll"  Checksum="yes" />
+      </Component>
+
+		</ComponentGroup>
+	</Fragment>
+
+</Wix>

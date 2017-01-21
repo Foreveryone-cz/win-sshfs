@@ -53,7 +53,22 @@ namespace Sshfs
             }
         }
 
-        public static void Presist<T>(this List<T> list, string file, bool delete = false) where T : ISerializable
+        private static void doBackups(string filepath)
+        {
+            if (File.Exists(filepath))
+            {
+                string bak = filepath + "~bak";
+                if (!File.Exists(bak))
+                {
+                    File.Move(filepath, bak);
+                }
+                else {
+                    File.Replace(filepath, bak, bak + "Prev", true);
+                }
+            }
+        }
+
+        public static void Persist<T>(this List<T> list, string file, bool delete = false) where T : ISerializable
 
         {
             string filepath = datadir.FullName + "\\" + file;
@@ -63,6 +78,8 @@ namespace Sshfs
             }
             else
             {
+                doBackups(filepath);
+
                 var xmlSerializer = new DataContractSerializer(typeof (List<T>));
                 using (
                     var stream = File.Open(filepath, FileMode.Create,
@@ -74,7 +91,7 @@ namespace Sshfs
         }
 
 
-        public static void Presist<T>(this T obj, string file, bool delete = false) where T : ISerializable
+        public static void Persist<T>(this T obj, string file, bool delete = false) where T : ISerializable
         {
             string filepath = datadir.FullName + "\\" + file;
             if (delete)
@@ -83,12 +100,15 @@ namespace Sshfs
             }
             else
             {
+                doBackups(filepath);
+
                 var xmlSerializer = new DataContractSerializer(typeof(List<T>));
                 using (
                     var stream = File.Open(filepath, FileMode.Create,
                                                                 FileAccess.Write))
                 {
                     xmlSerializer.WriteObject(stream, obj);
+                    stream.Close();
                 }
             }
         }
