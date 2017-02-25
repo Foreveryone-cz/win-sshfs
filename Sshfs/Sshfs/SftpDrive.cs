@@ -86,6 +86,7 @@ namespace Sshfs
         public string ProxyPass { get; set; }
 
         public int KeepAliveInterval { get; set; }
+        public int TimeoutInterval { get; set; }
 
         public SftpDrive(){}
        
@@ -127,7 +128,10 @@ namespace Sshfs
             {
                 KeepAliveInterval = 1;
             }
-
+            if (TimeoutInterval <= 0)
+            {
+                TimeoutInterval = 5;
+            }
             ConnectionInfo info = null;
             switch (ConnectionType)
             {
@@ -171,7 +175,7 @@ namespace Sshfs
             }
 
             _connection = Settings.Default.UseNetworkDrive ? String.Format("\\\\{0}\\{1}\\{2}", info.Host, Root, info.Username) : Name;
-            info.Timeout = new TimeSpan(0,0,5);
+            info.Timeout = new TimeSpan(0,0,TimeoutInterval);
 
             _filesystem = new SftpFilesystem(info, Root,_connection,Settings.Default.UseOfflineAttribute,false, (int) Settings.Default.AttributeCacheTimeout,  (int) Settings.Default.DirContentCacheTimeout);
             Debug.WriteLine("Connecting...");
@@ -449,6 +453,14 @@ namespace Sshfs
             {
                 KeepAliveInterval = 1;
             }
+            try
+            {
+                TimeoutInterval = info.GetInt16("timeoutInterval");
+            }
+            catch
+            {
+                TimeoutInterval = 5;
+            }
             ConnectionType = (ConnectionType) info.GetByte("c");
             if (ConnectionType == ConnectionType.Password)
             {
@@ -487,6 +499,7 @@ namespace Sshfs
             info.AddValue("proxyUser", ProxyUser);
             info.AddValue("proxyPass", ProxyPass);
             info.AddValue("keepAliveInterval", KeepAliveInterval);
+            info.AddValue("timeoutInterval", TimeoutInterval);
             if (ConnectionType == ConnectionType.Password)
             {
                 info.AddValue("p", Utilities.ProtectString(Password));

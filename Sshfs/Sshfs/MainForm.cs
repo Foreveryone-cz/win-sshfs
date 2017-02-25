@@ -448,6 +448,7 @@ namespace Sshfs
                 proxyLoginBox.Text = drive.ProxyUser;
                 proxyPassBox.Text = drive.ProxyPass;
                 keepAliveIntervalBox.Value = drive.KeepAliveInterval;
+                timeoutIntervalBox.Value = drive.TimeoutInterval;
                 muButton.Text = drive.Status == DriveStatus.Mounted ? "Unmount" : "Mount";
                 muButton.Image = drive.Status == DriveStatus.Mounted ? Resources.unmount : Resources.mount;
                 muButton.Enabled = (drive.Status == DriveStatus.Unmounted || drive.Status == DriveStatus.Mounted);
@@ -511,6 +512,7 @@ namespace Sshfs
             drive.ProxyUser = proxyLoginBox.Text;
             drive.ProxyPass = proxyPassBox.Text;
             drive.KeepAliveInterval = (int) keepAliveIntervalBox.Value;
+            drive.TimeoutInterval = (int) timeoutIntervalBox.Value;
             _dirty = true;
         }
 
