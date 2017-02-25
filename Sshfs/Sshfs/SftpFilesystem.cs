@@ -100,7 +100,7 @@ namespace Sshfs
 
             _sshClient = new SshClient(ConnectionInfo);
 
-            this.Log("Connected %s", _volumeLabel);
+            this.Log("Connected {0}", _volumeLabel);
             _sshClient.Connect();
 
             CheckAndroid();
@@ -119,7 +119,7 @@ namespace Sshfs
         protected override void OnDisconnected()
         {
             base.OnDisconnected();
-            this.Log("disconnected %s", _volumeLabel);
+            this.Log("disconnected {0}", _volumeLabel);
         }
 
         protected override void Dispose(bool disposing)

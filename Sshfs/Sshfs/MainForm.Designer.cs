@@ -65,7 +65,8 @@
             this.label10 = new System.Windows.Forms.Label();
             this.proxyType = new System.Windows.Forms.ComboBox();
             this.labelKeepAlive = new System.Windows.Forms.Label();
-            this.keepAliveIntervalBox = new System.Windows.Forms.NumericUpDown();
+            this.timeoutIntervalBox = new System.Windows.Forms.NumericUpDown();
+            this.labelTimeout = new System.Windows.Forms.Label();
             this.driveListView = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.imageList = new System.Windows.Forms.ImageList(this.components);
@@ -90,17 +91,21 @@
             this.startupMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.keepAliveIntervalBox = new System.Windows.Forms.NumericUpDown();
+            this.tableLayoutPanel4 = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel1.SuspendLayout();
             this.fieldsPanel.SuspendLayout();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.portBox)).BeginInit();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.keepAliveIntervalBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.timeoutIntervalBox)).BeginInit();
             this.tableLayoutPanel2.SuspendLayout();
             this.buttonPanel.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
             this.contextMenu.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.keepAliveIntervalBox)).BeginInit();
+            this.tableLayoutPanel4.SuspendLayout();
             this.SuspendLayout();
             // 
             // tableLayoutPanel1
@@ -121,15 +126,15 @@
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 41F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(583, 469);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(583, 467);
             this.tableLayoutPanel1.TabIndex = 0;
             // 
             // fieldsPanel
             // 
             this.fieldsPanel.ColumnCount = 3;
-            this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 26.10063F));
-            this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 73.89937F));
-            this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 26F));
+            this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 26.59933F));
+            this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 73.40067F));
+            this.fieldsPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 30F));
             this.fieldsPanel.Controls.Add(this.proxyHostBox, 1, 10);
             this.fieldsPanel.Controls.Add(this.label12, 0, 10);
             this.fieldsPanel.Controls.Add(this.panel3, 1, 11);
@@ -155,7 +160,7 @@
             this.fieldsPanel.Controls.Add(this.label10, 0, 9);
             this.fieldsPanel.Controls.Add(this.proxyType, 1, 9);
             this.fieldsPanel.Controls.Add(this.labelKeepAlive, 0, 12);
-            this.fieldsPanel.Controls.Add(this.keepAliveIntervalBox, 1, 12);
+            this.fieldsPanel.Controls.Add(this.tableLayoutPanel4, 1, 12);
             this.fieldsPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.fieldsPanel.Location = new System.Drawing.Point(253, 5);
             this.fieldsPanel.Name = "fieldsPanel";
@@ -175,15 +180,16 @@
             this.fieldsPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 29F));
             this.fieldsPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 29F));
             this.fieldsPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.fieldsPanel.Size = new System.Drawing.Size(327, 420);
+            this.fieldsPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.fieldsPanel.Size = new System.Drawing.Size(327, 418);
             this.fieldsPanel.TabIndex = 1;
             // 
             // proxyHostBox
             // 
             this.proxyHostBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.proxyHostBox.Location = new System.Drawing.Point(81, 322);
+            this.proxyHostBox.Location = new System.Drawing.Point(82, 322);
             this.proxyHostBox.Name = "proxyHostBox";
-            this.proxyHostBox.Size = new System.Drawing.Size(216, 20);
+            this.proxyHostBox.Size = new System.Drawing.Size(211, 20);
             this.proxyHostBox.TabIndex = 10;
             // 
             // label12
@@ -202,15 +208,15 @@
             this.panel3.Controls.Add(this.proxyPassBox);
             this.panel3.Controls.Add(this.proxyLoginBox);
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel3.Location = new System.Drawing.Point(81, 351);
+            this.panel3.Location = new System.Drawing.Point(82, 351);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(216, 23);
+            this.panel3.Size = new System.Drawing.Size(211, 23);
             this.panel3.TabIndex = 11;
             // 
             // proxyPassBox
             // 
             this.proxyPassBox.Dock = System.Windows.Forms.DockStyle.Right;
-            this.proxyPassBox.Location = new System.Drawing.Point(111, 0);
+            this.proxyPassBox.Location = new System.Drawing.Point(106, 0);
             this.proxyPassBox.Name = "proxyPassBox";
             this.proxyPassBox.Size = new System.Drawing.Size(105, 20);
             this.proxyPassBox.TabIndex = 1;
@@ -237,9 +243,9 @@
             // 
             // nameBox
             // 
-            this.nameBox.Location = new System.Drawing.Point(81, 3);
+            this.nameBox.Location = new System.Drawing.Point(82, 3);
             this.nameBox.Name = "nameBox";
-            this.nameBox.Size = new System.Drawing.Size(216, 20);
+            this.nameBox.Size = new System.Drawing.Size(211, 20);
             this.nameBox.TabIndex = 0;
             this.nameBox.Leave += new System.EventHandler(this.box_Leave);
             // 
@@ -256,9 +262,9 @@
             // 
             // hostBox
             // 
-            this.hostBox.Location = new System.Drawing.Point(81, 32);
+            this.hostBox.Location = new System.Drawing.Point(82, 32);
             this.hostBox.Name = "hostBox";
-            this.hostBox.Size = new System.Drawing.Size(216, 20);
+            this.hostBox.Size = new System.Drawing.Size(211, 20);
             this.hostBox.TabIndex = 1;
             this.hostBox.Leave += new System.EventHandler(this.box_Leave);
             // 
@@ -275,7 +281,7 @@
             // 
             // portBox
             // 
-            this.portBox.Location = new System.Drawing.Point(81, 61);
+            this.portBox.Location = new System.Drawing.Point(82, 61);
             this.portBox.Name = "portBox";
             this.portBox.Size = new System.Drawing.Size(68, 20);
             this.portBox.TabIndex = 2;
@@ -304,9 +310,9 @@
             // 
             // userBox
             // 
-            this.userBox.Location = new System.Drawing.Point(81, 90);
+            this.userBox.Location = new System.Drawing.Point(82, 90);
             this.userBox.Name = "userBox";
-            this.userBox.Size = new System.Drawing.Size(216, 20);
+            this.userBox.Size = new System.Drawing.Size(211, 20);
             this.userBox.TabIndex = 3;
             this.userBox.Leave += new System.EventHandler(this.box_Leave);
             // 
@@ -318,9 +324,9 @@
             "Password",
             "PrivateKey",
             "Pageant"});
-            this.authCombo.Location = new System.Drawing.Point(81, 119);
+            this.authCombo.Location = new System.Drawing.Point(82, 119);
             this.authCombo.Name = "authCombo";
-            this.authCombo.Size = new System.Drawing.Size(216, 21);
+            this.authCombo.Size = new System.Drawing.Size(211, 21);
             this.authCombo.TabIndex = 4;
             this.authCombo.SelectedIndexChanged += new System.EventHandler(this.authBox_SelectedIndexChanged);
             // 
@@ -350,7 +356,7 @@
             // 
             this.panel1.Controls.Add(this.letterBox);
             this.panel1.Controls.Add(this.mountCheck);
-            this.panel1.Location = new System.Drawing.Point(81, 235);
+            this.panel1.Location = new System.Drawing.Point(82, 235);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(182, 23);
             this.panel1.TabIndex = 7;
@@ -384,9 +390,9 @@
             this.directoryBox.Items.AddRange(new object[] {
             ".",
             "/"});
-            this.directoryBox.Location = new System.Drawing.Point(81, 206);
+            this.directoryBox.Location = new System.Drawing.Point(82, 206);
             this.directoryBox.Name = "directoryBox";
-            this.directoryBox.Size = new System.Drawing.Size(216, 21);
+            this.directoryBox.Size = new System.Drawing.Size(211, 21);
             this.directoryBox.TabIndex = 6;
             // 
             // label7
@@ -406,9 +412,9 @@
             this.panel2.Controls.Add(this.privateKeyBox);
             this.panel2.Controls.Add(this.privateKeyButton);
             this.panel2.Controls.Add(this.passwordBox);
-            this.panel2.Location = new System.Drawing.Point(81, 148);
+            this.panel2.Location = new System.Drawing.Point(82, 148);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(216, 52);
+            this.panel2.Size = new System.Drawing.Size(211, 52);
             this.panel2.TabIndex = 5;
             // 
             // passphraseBox
@@ -472,9 +478,9 @@
             // mountPointBox
             // 
             this.mountPointBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mountPointBox.Location = new System.Drawing.Point(81, 264);
+            this.mountPointBox.Location = new System.Drawing.Point(82, 264);
             this.mountPointBox.Name = "mountPointBox";
-            this.mountPointBox.Size = new System.Drawing.Size(216, 20);
+            this.mountPointBox.Size = new System.Drawing.Size(211, 20);
             this.mountPointBox.TabIndex = 8;
             // 
             // label10
@@ -497,9 +503,9 @@
             "HTTP",
             "SOCKS4",
             "SOCKS5"});
-            this.proxyType.Location = new System.Drawing.Point(81, 293);
+            this.proxyType.Location = new System.Drawing.Point(82, 293);
             this.proxyType.Name = "proxyType";
-            this.proxyType.Size = new System.Drawing.Size(216, 21);
+            this.proxyType.Size = new System.Drawing.Size(211, 21);
             this.proxyType.TabIndex = 9;
             // 
             // labelKeepAlive
@@ -508,27 +514,44 @@
             this.labelKeepAlive.Dock = System.Windows.Forms.DockStyle.Fill;
             this.labelKeepAlive.Location = new System.Drawing.Point(3, 377);
             this.labelKeepAlive.Name = "labelKeepAlive";
-            this.labelKeepAlive.Size = new System.Drawing.Size(72, 29);
+            this.labelKeepAlive.Size = new System.Drawing.Size(73, 29);
             this.labelKeepAlive.TabIndex = 26;
             this.labelKeepAlive.Text = "KeepAlive (s)";
             this.labelKeepAlive.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // keepAliveIntervalBox
+            // timeoutIntervalBox
             // 
-            this.keepAliveIntervalBox.Location = new System.Drawing.Point(81, 380);
-            this.keepAliveIntervalBox.Maximum = new decimal(new int[] {
+            this.timeoutIntervalBox.Dock = System.Windows.Forms.DockStyle.Left;
+            this.timeoutIntervalBox.Location = new System.Drawing.Point(153, 3);
+            this.timeoutIntervalBox.Maximum = new decimal(new int[] {
             999,
             0,
             0,
             0});
-            this.keepAliveIntervalBox.Minimum = new decimal(new int[] {
+            this.timeoutIntervalBox.Minimum = new decimal(new int[] {
             1,
             0,
             0,
             0});
-            this.keepAliveIntervalBox.Name = "keepAliveIntervalBox";
-            this.keepAliveIntervalBox.Size = new System.Drawing.Size(120, 20);
-            this.keepAliveIntervalBox.TabIndex = 27;
+            this.timeoutIntervalBox.Name = "timeoutIntervalBox";
+            this.timeoutIntervalBox.Size = new System.Drawing.Size(55, 20);
+            this.timeoutIntervalBox.TabIndex = 33;
+            this.timeoutIntervalBox.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // labelTimeout
+            // 
+            this.labelTimeout.AutoSize = true;
+            this.labelTimeout.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.labelTimeout.Location = new System.Drawing.Point(82, 0);
+            this.labelTimeout.Name = "labelTimeout";
+            this.labelTimeout.Size = new System.Drawing.Size(65, 23);
+            this.labelTimeout.TabIndex = 32;
+            this.labelTimeout.Text = "Timeout (s)";
+            this.labelTimeout.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // driveListView
             // 
@@ -542,7 +565,7 @@
             this.driveListView.Location = new System.Drawing.Point(3, 5);
             this.driveListView.MultiSelect = false;
             this.driveListView.Name = "driveListView";
-            this.driveListView.Size = new System.Drawing.Size(244, 378);
+            this.driveListView.Size = new System.Drawing.Size(244, 376);
             this.driveListView.SmallImageList = this.imageList;
             this.driveListView.TabIndex = 0;
             this.driveListView.UseCompatibleStateImageBehavior = false;
@@ -572,7 +595,7 @@
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel2.Controls.Add(this.removeButton, 1, 0);
             this.tableLayoutPanel2.Controls.Add(this.addButton, 0, 0);
-            this.tableLayoutPanel2.Location = new System.Drawing.Point(3, 389);
+            this.tableLayoutPanel2.Location = new System.Drawing.Point(3, 387);
             this.tableLayoutPanel2.Name = "tableLayoutPanel2";
             this.tableLayoutPanel2.RowCount = 1;
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
@@ -616,7 +639,7 @@
             this.buttonPanel.Controls.Add(this.muButton, 1, 0);
             this.buttonPanel.Controls.Add(this.saveButton, 1, 0);
             this.buttonPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.buttonPanel.Location = new System.Drawing.Point(253, 431);
+            this.buttonPanel.Location = new System.Drawing.Point(253, 429);
             this.buttonPanel.Name = "buttonPanel";
             this.buttonPanel.Padding = new System.Windows.Forms.Padding(0, 0, 15, 0);
             this.buttonPanel.RowCount = 1;
@@ -662,7 +685,7 @@
             this.tableLayoutPanel3.Controls.Add(this.virtualDriveCombo, 1, 0);
             this.tableLayoutPanel3.Controls.Add(this.label9, 0, 0);
             this.tableLayoutPanel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel3.Location = new System.Drawing.Point(3, 431);
+            this.tableLayoutPanel3.Location = new System.Drawing.Point(3, 429);
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
             this.tableLayoutPanel3.RowCount = 1;
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
@@ -769,7 +792,6 @@
             this.mountMenuItem.Text = "Mount";
             this.mountMenuItem.DropDownClosed += new System.EventHandler(this.mountMenuItem_DropDownClosed);
             this.mountMenuItem.DropDownOpening += new System.EventHandler(this.mountMenuItem_DropDownOpening);
-            this.mountMenuItem.DropDown.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.mountMenuItem_PreviewKeyDown);
             // 
             // unmountMenuItem
             // 
@@ -779,7 +801,6 @@
             this.unmountMenuItem.Text = "Unmount";
             this.unmountMenuItem.DropDownClosed += new System.EventHandler(this.unmountMenuItem_DropDownClosed);
             this.unmountMenuItem.DropDownOpening += new System.EventHandler(this.unmountMenuItem_DropDownOpening);
-            this.unmountMenuItem.DropDown.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.unmountMenuItem_PreviewKeyDown);
             // 
             // toolStripSeparator2
             // 
@@ -811,11 +832,51 @@
             this.exitMenuItem.Text = "Exit";
             this.exitMenuItem.Click += new System.EventHandler(this.exitMenuItem_Click);
             // 
+            // keepAliveIntervalBox
+            // 
+            this.keepAliveIntervalBox.Dock = System.Windows.Forms.DockStyle.Left;
+            this.keepAliveIntervalBox.Location = new System.Drawing.Point(3, 3);
+            this.keepAliveIntervalBox.Maximum = new decimal(new int[] {
+            999,
+            0,
+            0,
+            0});
+            this.keepAliveIntervalBox.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.keepAliveIntervalBox.Name = "keepAliveIntervalBox";
+            this.keepAliveIntervalBox.Size = new System.Drawing.Size(65, 20);
+            this.keepAliveIntervalBox.TabIndex = 34;
+            this.keepAliveIntervalBox.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // tableLayoutPanel4
+            // 
+            this.tableLayoutPanel4.ColumnCount = 3;
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 52.5974F));
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 47.4026F));
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
+            this.tableLayoutPanel4.Controls.Add(this.timeoutIntervalBox, 2, 0);
+            this.tableLayoutPanel4.Controls.Add(this.labelTimeout, 1, 0);
+            this.tableLayoutPanel4.Controls.Add(this.keepAliveIntervalBox, 0, 0);
+            this.tableLayoutPanel4.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel4.Location = new System.Drawing.Point(82, 380);
+            this.tableLayoutPanel4.Name = "tableLayoutPanel4";
+            this.tableLayoutPanel4.RowCount = 1;
+            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel4.Size = new System.Drawing.Size(211, 23);
+            this.tableLayoutPanel4.TabIndex = 35;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(583, 469);
+            this.ClientSize = new System.Drawing.Size(583, 467);
             this.Controls.Add(this.tableLayoutPanel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -836,12 +897,15 @@
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.keepAliveIntervalBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.timeoutIntervalBox)).EndInit();
             this.tableLayoutPanel2.ResumeLayout(false);
             this.buttonPanel.ResumeLayout(false);
             this.tableLayoutPanel3.ResumeLayout(false);
             this.tableLayoutPanel3.PerformLayout();
             this.contextMenu.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.keepAliveIntervalBox)).EndInit();
+            this.tableLayoutPanel4.ResumeLayout(false);
+            this.tableLayoutPanel4.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -907,6 +971,9 @@
         private System.Windows.Forms.TextBox proxyPassBox;
         private System.Windows.Forms.TextBox proxyLoginBox;
         private System.Windows.Forms.Label labelKeepAlive;
+        private System.Windows.Forms.NumericUpDown timeoutIntervalBox;
+        private System.Windows.Forms.Label labelTimeout;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel4;
         private System.Windows.Forms.NumericUpDown keepAliveIntervalBox;
     }
 }
